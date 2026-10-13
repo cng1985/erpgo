@@ -1,0 +1,13 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
+import { api, useRequestError } from '../api'
+import PageHeading from '../components/PageHeading.vue'
+const onError=useRequestError();const rows=ref([]);const query=ref('');const loading=ref(false);const dialog=ref(false);const saving=ref(false);const form=ref({name:'',contact:'',phone:'',address:''})
+async function load(){loading.value=true;try{const q=query.value?`?q=${encodeURIComponent(query.value)}&page_size=100`:'?page_size=100';rows.value=(await api.customers(q)).items}catch(e){onError(e)}finally{loading.value=false}}
+function open(){form.value={name:'',contact:'',phone:'',address:''};dialog.value=true}
+async function submit(){if(!form.value.name.trim()){ElMessage.warning('请输入客户名称');return}saving.value=true;try{await api.createCustomer(form.value);ElMessage.success('客户已添加');dialog.value=false;await load()}catch(e){onError(e)}finally{saving.value=false}}
+onMounted(load)
+</script>
+<template><div><PageHeading title="客户管理" subtitle="维护客户联系人和业务资料"><template #default><el-button type="primary" @click="open"><el-icon><Plus/></el-icon>新增客户</el-button></template></PageHeading><section class="surface module-surface"><div class="filter-bar"><el-input v-model="query" placeholder="搜索客户名称、联系人或电话" :prefix-icon="Search" clearable @keyup.enter="load" @clear="load"/><el-button @click="load">搜索</el-button><span class="filter-count">{{ rows.length }} 位客户</span></div><div class="table-scroll"><el-table :data="rows" v-loading="loading" stripe style="width:100%" empty-text="暂无客户"><el-table-column prop="name" label="客户名称" min-width="235"/><el-table-column prop="contact" label="联系人" min-width="130"/><el-table-column prop="phone" label="联系电话" min-width="155"/><el-table-column prop="address" label="地址" min-width="240"/><el-table-column label="合作状态" width="120"><template #default><el-tag type="success" effect="light">合作中</el-tag></template></el-table-column></el-table></div></section><el-dialog v-model="dialog" title="新增客户" width="520px"><el-form label-position="top"><el-form-item label="客户名称" required><el-input v-model="form.name" placeholder="输入公司或客户名称"/></el-form-item><el-form-item label="联系人"><el-input v-model="form.contact"/></el-form-item><el-form-item label="联系电话"><el-input v-model="form.phone"/></el-form-item><el-form-item label="地址"><el-input v-model="form.address" type="textarea" :rows="2"/></el-form-item></el-form><template #footer><el-button @click="dialog=false">取消</el-button><el-button type="primary" :loading="saving" @click="submit">保存客户</el-button></template></el-dialog></div></template>
