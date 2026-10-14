@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,8 +9,15 @@ import (
 
 	"github.com/cng1985/erpgo/backend/internal/config"
 	"github.com/cng1985/erpgo/backend/internal/model"
+	"go.uber.org/fx"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+)
+
+var Module = fx.Module(
+	"store",
+	fx.Provide(Open),
+	fx.Invoke(registerLifecycle),
 )
 
 func Open(cfg config.Config) (*gorm.DB, error) {
@@ -26,6 +34,27 @@ func Open(cfg config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("enable sqlite WAL: %w", err)
 	}
 	return db, nil
+}
+
+func registerLifecycle(lifecycle fx.Lifecycle, db *gorm.DB) {
+	lifecycle.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			if err := model.Migrate(db); err != nil {
+				return fmt.Errorf("migrate database: %w", err)
+			}
+			if err := Seed(db); err != nil {
+				return fmt.Errorf("seed database: %w", err)
+			}
+			return nil
+		},
+		OnStop: func(context.Context) error {
+			sqlDB, err := db.DB()
+			if err != nil {
+				return err
+			}
+			return sqlDB.Close()
+		},
+	})
 }
 
 func Seed(db *gorm.DB) error {

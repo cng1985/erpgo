@@ -5,7 +5,11 @@ import (
 	"strings"
 	"time"
 	_ "time/tzdata"
+
+	"go.uber.org/fx"
 )
+
+var Module = fx.Module("config", fx.Provide(Load))
 
 type Config struct {
 	Address        string

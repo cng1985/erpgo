@@ -10,6 +10,8 @@ backend/data/
 # Frontend dependencies and build output
 frontend/node_modules/
 frontend/dist/
+backend/internal/web/dist/*
+!backend/internal/web/dist/.keep
 
 # Editor and operating system files
 .DS_Store

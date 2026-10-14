@@ -10,8 +10,11 @@ import (
 	"github.com/cng1985/erpgo/backend/internal/config"
 	"github.com/cng1985/erpgo/backend/internal/model"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 )
+
+var Module = fx.Module("api", fx.Provide(New))
 
 type API struct {
 	db       *gorm.DB

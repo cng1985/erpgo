@@ -7,17 +7,31 @@
 需要 Go 1.27.2 或更新版本、Node.js 20+、npm 和 CGO C 编译器（例如 GCC）。
 
 ```bash
-# 终端一：后端
+# 先构建 Vue 静态文件；产物写入 backend/internal/web/dist，随后由 Go 编译进可执行文件
+cd frontend
+npm ci
+npm run build
+
+# 启动单体应用，Vue 页面和 API 共用 :8080
+cd ../backend
+go run ./cmd/server
+```
+
+打开 `http://localhost:8080`。Vue Router 的前端路由也由 Go 服务回退到嵌入的 `index.html`。
+
+开发 Vue 界面时可另开终端使用 Vite 热更新：
+
+```bash
+# 终端一：Go API
 cd backend
 go run ./cmd/server
 
 # 终端二：前端
 cd frontend
-npm ci
 npm run dev
 ```
 
-打开 Vite 输出的本地地址（默认 `http://localhost:5173`）。前端开发服务器会把 `/api` 请求代理到 `http://127.0.0.1:8080`。
+打开 Vite 输出的本地地址（默认 `http://localhost:5173`）。前端开发服务器会把 `/api` 请求代理到 `http://127.0.0.1:8080`。Go 服务直接提供嵌入的前端文件时，前端改动后需重新运行 `npm run build` 并重启 Go 进程。
 
 首次启动会在 `backend/data/erp.db` 自动建表，并插入一组明确用于演示的客户、商品和订单数据。后续启动只做迁移，不会覆盖已有数据库。配置可通过环境变量调整：
 
@@ -40,12 +54,13 @@ npm run dev
 ## 检查
 
 ```bash
-cd backend
-go test ./...
-go vet ./...
-cd ../frontend
+cd frontend
 npm ci
 npm run build
+cd ../backend
+go test ./...
+go vet ./...
+go build ./cmd/server
 ```
 
 服务健康检查：`GET /api/health`。核心 API：`GET /api/dashboard`、`/api/customers`、`/api/products`、`/api/orders`、`/api/inventory`、`/api/purchases`；对应创建或库存操作使用各模块的 `POST` 路由。订单状态更新使用 `PATCH /api/orders/:id/status`。

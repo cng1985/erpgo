@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  backend:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +17,6 @@ jobs:
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
-      - run: go test ./...
-        working-directory: backend
-      - run: go vet ./...
-        working-directory: backend
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -34,3 +26,9 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
+      - run: go test ./...
+        working-directory: backend
+      - run: go vet ./...
+        working-directory: backend
+      - run: go build ./cmd/server
+        working-directory: backend
